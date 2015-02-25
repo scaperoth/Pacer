@@ -15,7 +15,7 @@ constexpr unsigned int str2int(const char* str, int h = 0)
     return !str[h] ? 5381 : (str2int(str, h+1)*33) ^ str[h];
 }
 
-constexpr int str2bool(const std::string& str)
+int str2bool(const std::string& str)
 {
     return (str.compare("true") == 0)? 1 : 0;
 }
