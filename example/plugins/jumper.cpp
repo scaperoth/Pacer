@@ -267,6 +267,9 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
       ///
       ///////////////////////////////////////////////
       Vector3d x(pos_base[0], pos_base[1], pos_base[2]), xd(vel_base[0], vel_base[1], vel_base[2]), xdd(vel_base[3], vel_base[4], vel_base[5]);
+
+      static Vector3d init_pos = x;
+
       OUTLOG(x, "jumper_pos_base", logERROR);
       std::vector<Vector3d>
       foot_vel(NUM_FEET),
@@ -280,40 +283,62 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
       T_i[1] = 0.5;
       T_i[2] = 1.0;
 
+
+      //each
+      Ravelin::Vector3d
+      init_spline_pos = init_pos,
+      //needs to be changed to something meaningful for "squat" position
+      lowest_spline_pos(0, 0, 0),
+      final_spline_pos(fwd_vel_des * T_i[2], 0.0, up_vel_des * T_i[2] - (1 / 2 * g * pow(T_i[2], 2)));
+
+      Vector3d xd_final(fwd_vel_des, 0.0, up_vel_des);
       // create spline using set of control points, place at back of history
       int n = T_i.size();
 
+      static std::vector<VectorNd> coefs(3);
+
       for (int d = 0; d < 3; d++) {
-        VectorNd           X(n);
-        VectorNd          coefs = VectorNd();
 
-        //OUTLOG(coefs, "coefs here", logERROR);
-        //point spline needs  to be at at each point in time
-        //T[i] is the point in time that X[i] coincides with
-        X[0] = fwd_vel_des;
-        X[1] = 0.0;
-        X[2] = up_vel_des;
-
-        OUTLOG(X, "jumper_spline_X", logERROR);
 
         //Ravelin::Vector2d(xd[d],xd[d]) == beginning vel and end vel (not magnitude) in dimension d
         //fwd_vel_des = xd[0]
         //up_vel_des = xd[2]
         //coefs static!! don't recalculate
         //if statement if coefs empty then calculate, otherwise skip
-        if (coefs.size() == 0)
-          Utility::calc_cubic_spline_coefs(T_i, X, Ravelin::Vector2d(xd[d], xd[d]), coefs);
+        if (coefs[d].size() == 0) {
 
-        //OUTLOG(coefs, "jumper_coefs", logERROR);
+          VectorNd           X(n);
 
-        // then re-evaluate spline
-        // NOTE: this will only work if we replanned for a t_0  <  t  <  t_0 + t_I
+          //OUTLOG(coefs, "coefs here", logERROR);
+          //point spline needs  to be at at each point in time
+          //T[i] is the point in time that X[i] coincides with
+          //
+          // X =                i
+          //           0           1           2
+          //    0     x0      x_lowpoint    x_final_pos
+          // d  1     y0      y_lowpoint    y_final_pos
+          //    2     z0      z_lowpoint    z_final_pos
+          //
+          // for the x,y,z_final_pos find the outermost point of the movement by growing the vector ("exit" position)
+          X[0] = init_spline_pos[d];
+          X[1] = lowest_spline_pos[d];
+          X[2] = final_spline_pos[d];
+
+          OUTLOG(X, "jumper_spline_X", logERROR);
+
+          Utility::calc_cubic_spline_coefs(T_i, X, Ravelin::Vector2d(xd[d], xd_final[d]), coefs[d]);
+        }
+
+        // then evaluate spline
         OUT_LOG(logDEBUG) << "Eval first step in spline";
-        Utility::eval_cubic_spline(coefs, T_i, t, x[d], xd[d], xdd[d]);
+        Utility::eval_cubic_spline(coefs[d], T_i, t, x[d], xd[d], xdd[d]);
 
       }
-      OUTLOG(fwd_vel_des, "fwd_vel_des", logERROR);
-      OUTLOG(xd, "xd[]", logERROR);
+
+      OUTLOG(xd_final, "jumper_xd_final", logERROR);
+      OUTLOG(x, "jumper_x", logERROR);
+      OUTLOG(xd, "jumper_xd", logERROR);
+      OUTLOG(xdd, "jumper_xdd", logERROR);
 
       Ravelin::VectorNd Vb_des(6);
       //set your desired velocity vector
@@ -324,8 +349,6 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
       Vb_des[4] = 0.0;
       Vb_des[5] = 0.0;
 
-
-      OUTLOG(fwd_vel_des, "fwd_vel_des: ", logERROR);
       OUTLOG(vel_base, "jumper_vel_base", logERROR);
 
       static std::vector<double>

@@ -123,7 +123,7 @@
     <!-- Gains are for the [X Y Z r p y] of base -->
     <base_gains>
       <kp type="double">0   0   1e2 1e3 1e3 0</kp>
-      <kv type="double">1   1   1   1   1   1</kv>
+      <kv type="double">1e2   1e2   1e2   1e2   1e2   1e2</kv>
       <ki type="double">0   0   0   0 0 0</ki>
     </base_gains>
     <liftoff_gains>
