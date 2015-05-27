@@ -117,16 +117,13 @@
   <jumper>
     <real-time-factor type="double">1</real-time-factor>
     <priority type="double">2</priority>
-    <has_started type="bool">false</has_started>
-    <has_jumped type="bool">false</has_jumped>
-    <has_landed type="bool">false</has_landed>
     <phase type="double">0</phase>
     <des-contact type="bool">true</des-contact>
     <min-allowed-friction type="double">10</min-allowed-friction>
     <!-- Gains are for the [X Y Z r p y] of base -->
     <base_gains>
       <kp type="double">0   0   1e2 1e3 1e3 0</kp>
-      <kv type="double">1e2   1e2   1e2   1e2 1e2 0</kv>
+      <kv type="double">1   1   1   1   1   1</kv>
       <ki type="double">0   0   0   0 0 0</ki>
     </base_gains>
     <liftoff_gains>
@@ -145,7 +142,7 @@
     </desired>
     <des_jump_angle type="double">30.0</des_jump_angle>
     <gravity type="double">9.81</gravity>
-    <range type="double">1.0</range>
+    <range type="double">2.0</range>
     <alpha type="double">1.0</alpha>
   </jumper>
   

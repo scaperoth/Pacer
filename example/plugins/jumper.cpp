@@ -151,8 +151,12 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
 //distance goal in meters
   double r = ctrl->get_data<double>(plugin_namespace + "range");
 
+  OUTLOG(theta, "jumper_traj_theta", logERROR);
+  OUTLOG(alpha, "jumper_traj_alpha", logERROR);
+  OUTLOG(g, "jumper_traj_g", logERROR);
+  OUTLOG(r, "jumper_traj_r", logERROR);
+
   //bound for simple polynomial spline to stop calculating
-  double upper_bound = 1;
   //Ravelin::VectorNd exit_velocity(6);
   //Ravelin::VectorNd exit_velocity_dot(6);
 
@@ -244,15 +248,16 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
     Ravelin::SharedConstMatrixNd Jq = R.block(0, NUM_JOINT_DOFS, 0, NC * 3);
 
     //desired velocity in m/s
-    double v_desired = std::sqrt((g * r) / (std::sin(2 * theta)));
+
+    double theta_radians = theta * M_PI / 180;
+    double v_desired = std::sqrt((g * r) / (std::sin(2 * theta_radians)));
+    //OUTLOG(v_desired, "jumper_v_desired", logERROR);
     // forward value of desired vel
-    double fwd_vel_des = v_desired * std::cos(theta);
+    double fwd_vel_des = v_desired * std::cos(theta_radians);
+    OUTLOG(fwd_vel_des, "jumper_fwd_vel_des", logERROR);
     // upward value of desired vel
-    double up_vel_des = v_desired * std::sin(theta);
-
-    double upper_bound = 1;
-
-    double theta_pow = std::pow(t, 10);
+    double up_vel_des = v_desired * std::sin(theta_radians);
+    OUTLOG(up_vel_des, "jumper_up_vel_des", logERROR);
 
     if (PHASE < LANDED) {
 
@@ -261,7 +266,7 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
       ///   SPLINE CODE
       ///
       ///////////////////////////////////////////////
-      Vector3d x(pos_base[0], pos_base[1], pos_base[2]), xd(vel_base[0], vel_base[1], vel_base[2]), xdd(vel_base[3],vel_base[4],vel_base[5]);
+      Vector3d x(pos_base[0], pos_base[1], pos_base[2]), xd(vel_base[0], vel_base[1], vel_base[2]), xdd(vel_base[3], vel_base[4], vel_base[5]);
       OUTLOG(x, "jumper_pos_base", logERROR);
       std::vector<Vector3d>
       foot_vel(NUM_FEET),
@@ -269,20 +274,18 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
                foot_acc(NUM_FEET),
                foot_init(NUM_FEET);
 
-      // create spline using set of control points, place at back of history
-      int n = 3;
-
       //T for spline code
       VectorNd T_i(3);
       T_i[0] = 0.0;
       T_i[1] = 0.5;
       T_i[2] = 1.0;
 
-      OUTLOG(T, "T", logERROR);
-      OUTLOG(xd, "control_point_V", logERROR);
+      // create spline using set of control points, place at back of history
+      int n = T_i.size();
+
       for (int d = 0; d < 3; d++) {
         VectorNd           X(n);
-        VectorNd          &coefs = coefs;
+        VectorNd          coefs = VectorNd();
 
         //OUTLOG(coefs, "coefs here", logERROR);
         //point spline needs  to be at at each point in time
@@ -291,7 +294,7 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
         X[1] = 0.0;
         X[2] = up_vel_des;
 
-        OUTLOG(X, "X", logERROR);
+        OUTLOG(X, "jumper_spline_X", logERROR);
 
         //Ravelin::Vector2d(xd[d],xd[d]) == beginning vel and end vel (not magnitude) in dimension d
         //fwd_vel_des = xd[0]
@@ -300,6 +303,8 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
         //if statement if coefs empty then calculate, otherwise skip
         if (coefs.size() == 0)
           Utility::calc_cubic_spline_coefs(T_i, X, Ravelin::Vector2d(xd[d], xd[d]), coefs);
+
+        //OUTLOG(coefs, "jumper_coefs", logERROR);
 
         // then re-evaluate spline
         // NOTE: this will only work if we replanned for a t_0  <  t  <  t_0 + t_I
@@ -311,18 +316,9 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
       OUTLOG(xd, "xd[]", logERROR);
 
       Ravelin::VectorNd Vb_des(6);
-      /*
-      Vb_des[0] = (xd[0] < fwd_vel_des ) ? xd[0] : fwd_vel_des;
-      Vb_des[1] = 0.0;
-      Vb_des[2] = (xd[2] < up_vel_des ) ? xd[2] : up_vel_des ;
-      Vb_des[3] = 0.0;
-      Vb_des[4] = (theta_pow < upper_bound ) ? theta_pow : -theta * M_PI / 180;
-      Vb_des[5] = 0.0;
-
-      */
       //set your desired velocity vector
       Vb_des[0] = xd[0];
-      Vb_des[1] = 0.0;
+      Vb_des[1] = xd[1];
       Vb_des[2] = xd[2];
       Vb_des[3] = 0.0;
       Vb_des[4] = 0.0;
@@ -330,7 +326,7 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
 
 
       OUTLOG(fwd_vel_des, "fwd_vel_des: ", logERROR);
-      OUTLOG(vel_base[0], "vel_base[0]", logERROR);
+      OUTLOG(vel_base, "jumper_vel_base", logERROR);
 
       static std::vector<double>
       Kp = ctrl->get_data<std::vector<double> >(plugin_namespace + "base_gains.kp"),
@@ -344,8 +340,8 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
         vel_base_dot[j] = (Vb_des[j] - vel_base[j]) * Kv[j];
       }
 
-      OUTLOG(Jb, "Jb: ", logERROR);
-      OUTLOG(vel_base_dot, "vel_base", logERROR);
+      OUTLOG(Vb_des, "jumper_vb_des: ", logERROR);
+      OUTLOG(vel_base_dot, "vel_base_dot", logERROR);
 
       //multiply Jb * desired base velocity to get desired foot velocity
       Ravelin::VectorNd Vft;
@@ -365,7 +361,6 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
       Ravelin::VectorNd u = ctrl->get_joint_generalized_value(Pacer::Controller::load_goal);
       u += tau;
 
-
       ctrl->set_joint_generalized_value(Pacer::Controller::load_goal, u);
     } else {
       ctrl->set_data<double>(plugin_namespace + "phase", LANDED);
@@ -374,7 +369,7 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
 
   } else if (PHASE == STARTED || PHASE == LANDED) {
     OUTLOG(PHASE, "LIFTOFF HERE", logERROR);
-    
+
     if (PHASE == STARTED) {
       //OUTLOG(exit_velocity, "exit_velocity", logERROR);
       //OUTLOG(exit_velocity_dot, "exit_velocity_dot", logERROR);
