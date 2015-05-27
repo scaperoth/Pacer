@@ -25,12 +25,6 @@ target_link_libraries(stand-trajectory ${REQLIBS})
 add_library(inverse-dynamics MODULE inverse-dynamics.cpp)
 target_link_libraries(inverse-dynamics ${REQLIBS})
 
-add_library(jumper MODULE jumper.cpp)
-target_link_libraries(jumper ${REQLIBS})
-
-add_library(jumper-planner MODULE jumper-planner.cpp)
-target_link_libraries(jumper-planner ${REQLIBS})
-
 find_package(SDL2)
 find_package(curses)
 
