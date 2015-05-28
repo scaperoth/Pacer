@@ -268,8 +268,6 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
       ///////////////////////////////////////////////
       Vector3d x(pos_base[0], pos_base[1], pos_base[2]), xd(vel_base[0], vel_base[1], vel_base[2]), xdd(vel_base[3], vel_base[4], vel_base[5]);
 
-      static Vector3d init_pos = x;
-
       OUTLOG(x, "jumper_pos_base", logERROR);
       std::vector<Vector3d>
       foot_vel(NUM_FEET),
@@ -283,13 +281,13 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
       T_i[1] = 0.5;
       T_i[2] = 1.0;
 
-
+      static Vector3d init_pos = x;
       //each
       Ravelin::Vector3d
-      init_spline_pos = init_pos,
+      init_spline_pos(0, 0, 0),
       //needs to be changed to something meaningful for "squat" position
       lowest_spline_pos(0, 0, 0),
-      final_spline_pos(fwd_vel_des * T_i[2], 0.0, up_vel_des * T_i[2] - (1 / 2 * g * pow(T_i[2], 2)));
+      final_spline_pos(1,1,1);
 
       Vector3d xd_final(fwd_vel_des, 0.0, up_vel_des);
       // create spline using set of control points, place at back of history
@@ -298,7 +296,6 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
       static std::vector<VectorNd> coefs(3);
 
       for (int d = 0; d < 3; d++) {
-
 
         //Ravelin::Vector2d(xd[d],xd[d]) == beginning vel and end vel (not magnitude) in dimension d
         //fwd_vel_des = xd[0]

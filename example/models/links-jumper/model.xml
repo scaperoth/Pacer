@@ -1,6 +1,6 @@
 <XML>
   <DRIVER>
-    <camera position="0.35 -1.55 0.5" target=".6 0 0" up="0 0 1" />
+    <camera position="1.85 -3.55 .7" target=".6 0 0" up="0 0 1" />
     <window location="0 0" size="1040 480" />
   </DRIVER>
   <MOBY>
