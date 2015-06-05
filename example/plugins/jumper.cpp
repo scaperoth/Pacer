@@ -276,20 +276,20 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
                foot_init(NUM_FEET);
 
       //T for spline code
-      VectorNd T_i(3);
+      VectorNd T_i(2);
       T_i[0] = 0.0;
-      T_i[1] = 0.5;
-      T_i[2] = 1.0;
+      T_i[1] = 1;
+      //T_i[2] = 1.0;
 
       static Vector3d init_pos = x;
+      Vector3d xd_final(fwd_vel_des, 0.0, up_vel_des);
       //each
       Ravelin::Vector3d
       init_spline_pos(0, 0, 0),
-      //needs to be changed to something meaningful for "squat" position
-      lowest_spline_pos(0, 0, 0),
-      final_spline_pos(1,1,1);
+                      //needs to be changed to something meaningful for "squat" position
+                      //lowest_spline_pos(0, 0, -.03 ),
+                      final_spline_pos(.06, 0, .03);
 
-      Vector3d xd_final(fwd_vel_des, 0.0, up_vel_des);
       // create spline using set of control points, place at back of history
       int n = T_i.size();
 
@@ -318,8 +318,8 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
           //
           // for the x,y,z_final_pos find the outermost point of the movement by growing the vector ("exit" position)
           X[0] = init_spline_pos[d];
-          X[1] = lowest_spline_pos[d];
-          X[2] = final_spline_pos[d];
+          //X[1] = lowest_spline_pos[d];
+          X[1] = final_spline_pos[d];
 
           OUTLOG(X, "jumper_spline_X", logERROR);
 
@@ -328,14 +328,26 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
 
         // then evaluate spline
         OUT_LOG(logDEBUG) << "Eval first step in spline";
+
         Utility::eval_cubic_spline(coefs[d], T_i, t, x[d], xd[d], xdd[d]);
 
       }
 
-      OUTLOG(xd_final, "jumper_xd_final", logERROR);
-      OUTLOG(x, "jumper_x", logERROR);
-      OUTLOG(xd, "jumper_xd", logERROR);
-      OUTLOG(xdd, "jumper_xdd", logERROR);
+      /*redefine variables with access to coefs and t_i
+        
+      for (double t_step = T_i[0]; t_step < T_i[n - 1]; t_step += .01) {
+        for (int dim = 0; dim < 3; dim++) {
+          Utility::eval_cubic_spline(coefs[dim], T_i, t_step, x[dim], xd[dim], xdd[dim]);
+        }
+
+        OUTLOG(xd_final, "jumper_xd_final", logERROR);
+        OUTLOG(x, "jumper_x", logERROR);
+        OUTLOG(xd, "jumper_xd", logERROR);
+        OUTLOG(xdd, "jumper_xdd", logERROR);
+      }
+
+      exit(1);*/
+      
 
       Ravelin::VectorNd Vb_des(6);
       //set your desired velocity vector
