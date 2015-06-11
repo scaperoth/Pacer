@@ -191,8 +191,14 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double time){
     //// PRESSURIZE LEG & SERVO BODY ATTITUDE WITH HIP
     qd_des[ROLL_JOINT] = 0.0;
     qd_des[PITCH_JOINT] = 0.0;
+<<<<<<< HEAD
     qd_des[PISTON_JOINT] = .2; 
     q_des[PISTON_JOINT] = qd_des[PISTON_JOINT]*dt;
+=======
+    qd_des[PISTON_JOINT] = 0.0; // NOTE: this is not used
+    q_des[PISTON_JOINT] = qd_des[PISTON_JOINT]*dt;
+    u[PISTON_JOINT] = 500;
+>>>>>>> 0212aa973e1981badf9641b886a708868770a2ac
     break;
   case eUnloading:
     OUT_LOG(logERROR) << "UNLOADING PHASE";
@@ -263,7 +269,11 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double time){
 // calls *my* update function
 void update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t){
   static int ITER = 0;
+<<<<<<< HEAD
   int RTF = (int) Utility::get_variable<double>(plugin_namespace+"real-time-factor");
+=======
+  int RTF = (int) ctrl->get_data<double>(plugin_namespace+"real-time-factor");
+>>>>>>> 0212aa973e1981badf9641b886a708868770a2ac
   if(ITER%RTF == 0)
     Update(ctrl,t);
   ITER += 1;
@@ -274,7 +284,11 @@ extern "C" {
     plugin_namespace = std::string(std::string(name)+".");
 
     // get the desired priority
+<<<<<<< HEAD
     int priority = Utility::get_variable<double>(plugin_namespace+"priority");
+=======
+    int priority = ctrl->get_data<double>(plugin_namespace+"priority");
+>>>>>>> 0212aa973e1981badf9641b886a708868770a2ac
 
     // set the hook to my plugin
     ctrl->add_plugin_update(priority,name,&update);
