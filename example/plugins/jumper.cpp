@@ -139,6 +139,22 @@ void activate_joint_pid(boost::shared_ptr<Pacer::Controller> ctrl, JointPID pid)
   ctrl->set_joint_generalized_value(Pacer::Controller::load_goal, u);
 }
 
+void run_test(std::vector<Ravelin::VectorNd> coefs, VectorNd T_i, Vector3d real_x, Vector3d real_xd, Vector3d real_xdd, Vector3d xd_final, int n) {
+
+  for (double t_step = T_i[0]; t_step <= T_i[n - 1]; t_step += .01) {
+    for (int dim = 0; dim < 3; dim++) {
+      Utility::eval_cubic_spline(coefs[dim], T_i, t_step, real_x[dim], real_xd[dim], real_xdd[dim]);
+    }
+
+    OUTLOG(xd_final, "jumper_xd_final", logERROR);
+    OUTLOG(real_x, "jumper_x", logERROR);
+    OUTLOG(real_xd, "jumper_xd", logERROR);
+    OUTLOG(real_xdd, "jumper_xdd", logERROR);
+
+  }
+
+}
+
 void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
   ctrl_ptr = ctrl;
   static JointPID pid_liftoff(LIFTOFF);
@@ -151,10 +167,19 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
 //distance goal in meters
   double r = ctrl->get_data<double>(plugin_namespace + "range");
 
+  //boolean for whether or not we're in development mode
+  bool development = ctrl->get_data<bool>(plugin_namespace + "development");
+
+  //variable on whether or not to kill program at end of spline
+  bool time_constraint = ctrl->get_data<bool>(plugin_namespace + "time_constraint");
+
+  double total_spline_time = ctrl->get_data<double>(plugin_namespace + "total_spline_time");
+
   OUTLOG(theta, "jumper_traj_theta", logERROR);
   OUTLOG(alpha, "jumper_traj_alpha", logERROR);
   OUTLOG(g, "jumper_traj_g", logERROR);
   OUTLOG(r, "jumper_traj_r", logERROR);
+
 
   //bound for simple polynomial spline to stop calculating
   //Ravelin::VectorNd exit_velocity(6);
@@ -259,41 +284,64 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
     double up_vel_des = v_desired * std::sin(theta_radians);
     OUTLOG(up_vel_des, "jumper_up_vel_des", logERROR);
 
+
     if (PHASE < LANDED) {
+      //the current values
+      Vector3d
+      real_x(pos_base[0], pos_base[1], pos_base[2]),
+             real_xd(vel_base[0], vel_base[1], vel_base[2]),
+             real_xdd(vel_base[3], vel_base[4], vel_base[5]);
 
       ///////////////////////////////////////////////
       ///
       ///   SPLINE CODE
       ///
       ///////////////////////////////////////////////
-      Vector3d x(pos_base[0], pos_base[1], pos_base[2]), xd(vel_base[0], vel_base[1], vel_base[2]), xdd(vel_base[3], vel_base[4], vel_base[5]);
 
-      OUTLOG(x, "jumper_pos_base", logERROR);
+      //the values to be manipulated by the spline
+      Vector3d x = real_x,
+               xd = real_xd,
+               xdd = real_xdd;
+
+      OUTLOG(x, "jumper_real_x", logERROR);
+      OUTLOG(xd, "jumper_real_xd", logERROR);
+      OUTLOG(xdd, "jumper_real_xdd", logERROR);
+
       std::vector<Vector3d>
       foot_vel(NUM_FEET),
                foot_pos(NUM_FEET),
                foot_acc(NUM_FEET),
                foot_init(NUM_FEET);
 
-      //T for spline code
-      VectorNd T_i(2);
-      T_i[0] = 0.0;
-      T_i[1] = 1;
-      //T_i[2] = 1.0;
 
       static Vector3d init_pos = x;
       Vector3d xd_final(fwd_vel_des, 0.0, up_vel_des);
       //each
-      Ravelin::Vector3d
-      init_spline_pos(0, 0, 0),
-                      //needs to be changed to something meaningful for "squat" position
-                      //lowest_spline_pos(0, 0, -.03 ),
-                      final_spline_pos(.06, 0, .03);
 
-      // create spline using set of control points, place at back of history
+      //T for spline code
+      VectorNd T_i(2);
+      T_i[0] = 0.0;
+      T_i[1] = total_spline_time;
+      //T_i[2] = 3.0;
+      //T_i[3] = 3.5;
+
+      //size of spline time vector
       int n = T_i.size();
 
-      static std::vector<VectorNd> coefs(3);
+      Ravelin::Vector3d
+      init_spline_pos(1, 0, .179),
+                      //needs to be changed to something meaningful for "squat" position
+                      //lowest_spline_pos(.1, 0, -.02 ),
+                      //rise_spline_pos(.9, 0, -.1 ),
+                      final_spline_pos(1, 0, 1);
+
+      ////////////////////////////////////////////////////////////
+      //
+      //  variable to turn testing and graph creation on or off
+      //  run source parse_data.sh after activating development
+      //
+      ///////////////////////////////////////////////////////////
+      static std::vector<VectorNd> coefs(4);
 
       for (int d = 0; d < 3; d++) {
 
@@ -318,8 +366,9 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
           //
           // for the x,y,z_final_pos find the outermost point of the movement by growing the vector ("exit" position)
           X[0] = init_spline_pos[d];
-          //X[1] = lowest_spline_pos[d];
           X[1] = final_spline_pos[d];
+          //X[2] = rise_spline_pos[d];
+          //X[3] = final_spline_pos[d];
 
           OUTLOG(X, "jumper_spline_X", logERROR);
 
@@ -333,30 +382,39 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
 
       }
 
-      /*redefine variables with access to coefs and t_i
-        
-      for (double t_step = T_i[0]; t_step < T_i[n - 1]; t_step += .01) {
-        for (int dim = 0; dim < 3; dim++) {
-          Utility::eval_cubic_spline(coefs[dim], T_i, t_step, x[dim], xd[dim], xdd[dim]);
-        }
 
-        OUTLOG(xd_final, "jumper_xd_final", logERROR);
-        OUTLOG(x, "jumper_x", logERROR);
-        OUTLOG(xd, "jumper_xd", logERROR);
-        OUTLOG(xdd, "jumper_xdd", logERROR);
+      if (development) {
+        run_test( coefs,  T_i,  real_x, real_xd, real_xdd, xd_final, n);
+        ctrl->set_data<bool>(plugin_namespace + "development", false);
       }
 
-      exit(1);*/
-      
 
-      Ravelin::VectorNd Vb_des(6);
+      Ravelin::VectorNd xb_des(6);
       //set your desired velocity vector
-      Vb_des[0] = xd[0];
-      Vb_des[1] = xd[1];
-      Vb_des[2] = xd[2];
-      Vb_des[3] = 0.0;
-      Vb_des[4] = 0.0;
-      Vb_des[5] = 0.0;
+      xb_des[0] = x[0];
+      xb_des[1] = x[1];
+      xb_des[2] = x[2];
+      xb_des[3] = 0.0;
+      xb_des[4] = 0.0;
+      xb_des[5] = 0.0;
+
+      Ravelin::VectorNd xdb_des(6);
+      //set your desired velocity vector
+      xdb_des[0] = xd[0];
+      xdb_des[1] = xd[1];
+      xdb_des[2] = xd[2];
+      xdb_des[3] = 0.0;
+      xdb_des[4] = 0.0;
+      xdb_des[5] = 0.0;
+
+      Ravelin::VectorNd xddb_des(6);
+      //set your desired velocity vector
+      xddb_des[0] = xdd[0];
+      xddb_des[1] = xdd[1];
+      xddb_des[2] = xdd[2];
+      xddb_des[3] = 0.0;
+      xddb_des[4] = 0.0;
+      xddb_des[5] = 0.0;
 
       OUTLOG(vel_base, "jumper_vel_base", logERROR);
 
@@ -412,6 +470,11 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
   } else if (PHASE == LIFTOFF) {
     activate_joint_pid(ctrl, pid_liftoff);
   }
+
+  if (time_constraint && t >= total_spline_time) {
+    exit(1);
+  }
+  OUTLOG(t, "jumper_time", logERROR);
 
 }
 

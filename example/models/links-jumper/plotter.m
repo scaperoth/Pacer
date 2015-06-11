@@ -1,26 +1,53 @@
-x = load ("x.mat");
-y = load ("xd.mat");
-z = load ("xdd.mat");
+x 			= load("x.mat");
+vel 		= load("xd.mat");
+accel 		= load("xdd.mat");
+realx 		= load("realx.mat");
+realvel 	= load("realxd.mat");
+realaccel 	= load("realxdd.mat");
 
 set(gca, "linewidth", 4, "fontsize", 12)
 
-subplot(2,2,1)
+subplot(2,3,1)
+hold on;
+plot(realx(:,1), 'g', "linewidth", 3);
 plot(x(:,1), 'r', "linewidth", 3);
-hold on;
-#plot(y(:,1), 'g', "linewidth", 3);
-#plot(z(:,1), 'b', "linewidth", 3);
-title("X: RGB: Position, Vel, Accel");
+title("position X");
+hold off;
 
-subplot(2,2,2)
+subplot(2,3,2)
 hold on;
+plot(realx(:,2), 'g', "linewidth", 3);
 plot(x(:,2), 'r', "linewidth", 3);
-#plot(y(:,2), 'g', "linewidth", 3);
-#plot(z(:,2), 'b', "linewidth", 3);
-title("Y: RGB: Position, Vel, Accel");
+title("Position Y");
+hold off;
 
-subplot(2,2,3)
-plot(x(:,3), 'r', "linewidth", 3);
+subplot(2,3,3)
 hold on;
-#plot(y(:,3), 'g', "linewidth", 3);
-#plot(z(:,3), 'b', "linewidth", 3);
-title("Z: RGB: Position, Vel, Accel");
+plot(realx(:,3), 'g', "linewidth", 3);
+plot(x(:,3), 'r', "linewidth", 3);
+title("Position Z");
+hold off;
+
+subplot(2,3,4)
+hold on;
+plot(realvel(:,1), 'g', "linewidth", 3);
+plot(vel(:,1), 'r', "linewidth", 3);
+title("Velocity X");
+hold off;
+
+subplot(2,3,5)
+hold on;
+plot(realvel(:,2), 'g', "linewidth", 3);
+plot(vel(:,2), 'r', "linewidth", 3);
+title("Velocity Y");
+hold off;
+
+subplot(2,3,6)
+hold on;
+plot(realvel(:,3), 'g', "linewidth", 3);
+plot(vel(:,3), 'r', "linewidth", 3);
+title("Velocity Z");
+hold off;
+
+hold off;
+title("Z");
