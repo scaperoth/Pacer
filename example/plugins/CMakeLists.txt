@@ -31,9 +31,6 @@ target_link_libraries(inverse-dynamics ${REQLIBS})
 add_library(jumper MODULE jumper.cpp)
 target_link_libraries(jumper ${REQLIBS})
 
-add_library(jumper-planner MODULE jumper-planner.cpp)
-target_link_libraries(jumper-planner ${REQLIBS})
-
 find_package(SDL2)
 find_package(curses)
 
@@ -44,3 +41,13 @@ IF(SDL2_FOUND)
   add_library(gamepad MODULE gamepad.cpp)
   target_link_libraries(gamepad ${REQLIBS} ${SDL2_LIBRARIES} ${CURSES_LIBRARIES})
 ENDIF(SDL2_FOUND)
+
+#jumper model libraries and plugins
+add_library(jumper-planner MODULE jumper-planner.cpp)
+target_link_libraries(jumper-planner ${REQLIBS})
+
+add_library(jumper_joint-PID-controller MODULE jumper_joint-PID-controller.cpp)
+target_link_libraries(jumper_joint-PID-controller ${REQLIBS})
+
+add_library(jumper_eef-PID-controller MODULE jumper_eef-PID-controller.cpp)
+target_link_libraries(jumper_eef-PID-controller ${REQLIBS})
