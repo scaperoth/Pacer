@@ -23,9 +23,7 @@
 <!--      <ContactParameters object1-id="LINKS" object2-id="BOX1" mu-coulomb="0.5" mu-viscous="0" epsilon="0.0"/>-->
     </EventDrivenSimulator>
   
-  
     <SDF filename="model.sdf"/>
-    
   <!-- setup the platform rigid body; it is not active -->
      <Box id="ground-primitive-viz" rpy="1.5708 0.0 0"  xlen="8" ylen="0.001" zlen="8" />
      <Plane id="ground-primitive" rpy="1.5708 0 0" />

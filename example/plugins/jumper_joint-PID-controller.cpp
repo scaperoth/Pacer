@@ -6,15 +6,11 @@
 #include <sstream>
 #include <Pacer/controller.h>
 #include <Pacer/utilities.h>
+#include <Pacer/jumper.h>
 
 std::string plugin_namespace;
 
 boost::shared_ptr<Pacer::Controller> ctrl_ptr;
-
-int LOADED = 0;
-int STARTED = 1;
-int LIFTOFF = 2;
-int LANDED = 3;
 
 class JointPID {
 public:
