@@ -31,7 +31,7 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
           ctrl->get_data<Ravelin::Pose3d>("base_link_frame")));
     static std::vector<std::string>
     foot_names = ctrl->get_data<std::vector<std::string> >("jumper_eef-PID-controller.id");
-
+    
     for (int i = 0; i < foot_names.size(); i++) {
       Ravelin::Vector3d x
       = Ravelin::Pose3d::transform_point(base_frame, Ravelin::Vector3d(0, 0, 0, ctrl->get_link(foot_names[i])->get_pose())),

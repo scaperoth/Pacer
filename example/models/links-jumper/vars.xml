@@ -324,14 +324,14 @@
     <!-- Gains are for the [X Y Z r p y] of base -->
     <base_gains>
       <kp type="double">1e2   1e2   1e2   1e2   1e2  1e2</kp>
-      <kv type="double">8   1e2   1e3   1e2   1e2  1e2 </kv>
+      <kv type="double">1e1  1e2   1e3   1e2   1e2  1e2 </kv>
       <ki type="double">1e-1   1e-1   1e-1   1e-1   1e-1  1e-1</ki>
     </base_gains>
     <desired>
       <x type="double">0 0 0.161853  0 0 0</x>
       <xd type="double">0 0 0  0 0 0</xd>
     </desired>
-    <des_jump_angle type="double">30.0</des_jump_angle>
+    <des_jump_angle type="double">25.0</des_jump_angle>
     <gravity type="double">9.81</gravity>
     <range type="double">1</range>
     <alpha type="double">1</alpha>
@@ -339,7 +339,7 @@
     <time_constraint type="bool">false</time_constraint>
     <total_spline_time type="double">.5</total_spline_time>
     <start_spline type="double">0 0 .172</start_spline>
-    <end_spline type="double">.4  0 .3</end_spline>
+    <end_spline type="double">.4  0 .2</end_spline>
   </jumper>
 
   <jumper_joint-PID-controller>
@@ -364,8 +364,8 @@
     <id type="string">LF_FOOT           RF_FOOT             LH_FOOT             RH_FOOT</id>
     <!-- Gains are for the q of joint ids respectively -->
     <gains>
-      <kp type="double">3e1 3e1 3e1      3e1 3e1 3e1      3e1 3e1 3e1     3e1 3e1 3e1</kp>
-      <kv type="double">2e-1 2e-1 2e-1      2e-1 2e-1 2e-1     22e-1 2e-1 2e-1     2e-1 2e-1 2e-1</kv>
+      <kp type="double">3e1 3e1 3e1         3e1 3e1 3e1         3e1 3e1 3e1       3e1 3e1 3e1</kp>
+      <kv type="double">2e-1 2e-1 2e-1      2e-1 2e-1 2e-1     2e-1 2e-1 2e-1     2e-1 2e-1 2e-1</kv>
       <ki type="double">1e-2 1e-2 1e-2      1e-2 1e-2 1e-2      1e-2 1e-2 1e-2     1e-2 1e-2 1e-2</ki>
     </gains>
   </jumper_eef-PID-controller>

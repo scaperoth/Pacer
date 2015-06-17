@@ -147,7 +147,7 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
   ///
   ///////////////////////////////////////////////
   if (NC > 0 ) {
-    if (PHASE ==  LOADED && NC == 4)
+    if (PHASE ==  LOADED)
       ctrl->set_data<double>(plugin_namespace + "phase", STARTED);
 
     if (PHASE ==  LIFTOFF)
@@ -209,6 +209,8 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
              foot_init(NUM_FEET),
              foot_init_xd(NUM_FEET);
     std::vector<std::string> eef_names = ctrl_ptr->get_data<std::vector<std::string> >("jumper_eef-PID-controller.id");
+    
+    
     if (PHASE == STARTED) {
       for (int i = 0; i < NUM_FEET; i++) {
         //get initail position
