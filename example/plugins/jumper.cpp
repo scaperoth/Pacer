@@ -178,7 +178,7 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
     Ravelin::SharedConstMatrixNd Jb = R.block(NUM_JOINT_DOFS, NDOFS, 0, NC * 3);
     Ravelin::SharedConstMatrixNd Jq = R.block(0, NUM_JOINT_DOFS, 0, NC * 3);
 
-
+ 
     ///////////////////////////////////////////////
     ///
     ///   TRAJECTORY CODE
