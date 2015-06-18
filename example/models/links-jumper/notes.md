@@ -16,6 +16,9 @@ also decent performance acheived visually, but not a principled approach physica
 ### NEW APPROACH
 use spline trajectory planning for desired base velocity and position instead of polynomial calculation from before
 
+#### Update
+using three nodes for spline calculation: start, lowest point, and finish. The values placed at these points are experimental at best at this point
+
 ### NEW APPROACH
 use phases for different parts of the movement to form a state machine. Phases used are LOADED, STARTED, LIFTOFF, and LANDED. Each phase is controlled differently. In LOADED, stand-trajectory -- or, in this project, jumper-planner -- sets the standing position. STARTED is activated when # of contaces, NC, is greater than zero. In STARTED, base velocity and position are determined by spline code. If the current phase is STARTET and the NC is 0, the phase changes to LIFTOFF. In LIFTOFF, the joint-PID controller is started which gets its desired values from the jumper-planner code. If NC > 0 and the phase is LIFTOFF, the phase changes to LANDED. 
 
@@ -23,13 +26,16 @@ use phases for different parts of the movement to form a state machine. Phases u
 LIFTOFF gains cause the robot to flip and/or turn violently because it is trying to reach it's desired pose too quickly. A new joint-PID controller class is created for the LIFTOFF phase and the gains for that phase are lowered to slow the movement of the end effectors in the air and reduce the resulting angular momentum of in-air movement.
 
 #### Update
+Experiencing problems with spline calculation. The spline starts off correctly then in the middle of the calculation "bumps" up a little bit at what is supposed to be the lowest point of the spline, or the global minimum of the trajectory. This causes undesirable movements in the robot base when trying to perform a jump. 
+
+#### Update
+Using three nodes for spline proves to be difficult and unnecessary. switching to two nodes for spline calculation leads to smother movement between start and end points in all directions.
+
+#### Update
 code was added to track actual movement and spline calculation
 
 #### RESULT
 The robot still has problems during the jumping phase. The comparison of the xyz desired vs actual revealed that the robot was not following the spline trajectory. This is potentially because the robot is only basing its desired movement off of velocity error and gains instead of using the full PID control mechanism. 
-
-### NEW FEATURE
-use joint control for liftoff with loose gains and same controller for landing
 
 ### NEW APPROACH
 added eef-PID-control to stabilize the robot during the jumping phase
