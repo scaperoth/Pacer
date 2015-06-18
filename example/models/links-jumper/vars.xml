@@ -321,12 +321,17 @@
     <priority type="double">2</priority>
     <phase type="double">0</phase>
     <min-allowed-friction type="double">10</min-allowed-friction>
-    <!-- Gains are for the [X Y Z r p y] of base -->
-    <base_gains>
-      <kp type="double">1e2   1e2   1e2   1e2   1e2  1e2</kp>
-      <kv type="double">1e1  1e2   2e3   1e2   1e2  1e2 </kv>
-      <ki type="double">1e-1   1e-1   1e-1   1e-1   1e-1  1e-1</ki>
-    </base_gains>
+    <!-- Gains are for the q of joint ids respectively -->
+    <liftoff_gains>
+      <kp type="double">1e3 1e3 1e3   1e3 1e3 1e3   1e3 1e3 1e3   1e3 1e3 1e3</kp>
+      <kv type="double">3e1 3e1 3e1     3e1 3e1 3e1     3e1 3e1 3e1     3e1 3e1 3e1     </kv>
+      <ki type="double">0 0 0     0 0 0     0 0 0     0 0 0</ki>
+    </liftoff_gains>
+    <landing_gains>
+      <kp type="double">1e3 1e3 1e3   1e3 1e3 1e3   1e3 1e3 1e3   1e3 1e3 1e3</kp>
+      <kv type="double">3e1 3e1 3e1     3e1 3e1 3e1     3e1 3e1 3e1     3e1 3e1 3e1     </kv>
+      <ki type="double">0 0 0     0 0 0     0 0 0     0 0 0</ki>
+    </landing_gains>
     <desired>
       <x type="double">0 0 0.161853  0 0 0</x>
       <xd type="double">0 0 0  0 0 0</xd>
@@ -364,9 +369,9 @@
     <id type="string">LF_FOOT           RF_FOOT             LH_FOOT             RH_FOOT</id>
     <!-- Gains are for the q of joint ids respectively -->
     <gains>
-      <kp type="double">3e1 3e1 3e1         3e1 3e1 3e1         3e1 3e1 3e1       3e1 3e1 3e1</kp>
-      <kv type="double">2e-1 2e-1 2e-1      2e-1 2e-1 2e-1     2e-1 2e-1 2e-1     2e-1 2e-1 2e-1</kv>
-      <ki type="double">1e-2 1e-2 1e-2      1e-2 1e-2 1e-2      1e-2 1e-2 1e-2     1e-2 1e-2 1e-2</ki>
+      <kp type="double">1e3 1e3 1e3   1e3 1e3 1e3   1e3 1e3 1e3   1e3 1e3 1e3</kp>
+      <kv type="double">3e1 3e1 3e1     3e1 3e1 3e1     3e1 3e1 3e1     3e1 3e1 3e1     </kv>
+      <ki type="double">0 0 0     0 0 0     0 0 0     0 0 0</ki>
     </gains>
   </jumper_eef-PID-controller>
 
