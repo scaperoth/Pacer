@@ -117,16 +117,13 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
   ctrl_ptr = ctrl;
   static eefPID pid;
 
-  int PHASE = (int)ctrl->get_data<double>("jumper.phase");
+  pid.update();
 
-  if (PHASE == STARTED) {
-    pid.update();
+  Ravelin::VectorNd u = ctrl->get_joint_generalized_value(Pacer::Controller::load_goal);
+  OUTLOG(pid.u, "eef_pid_U", logDEBUG);
+  u += pid.u.segment(0, u.rows());
+  ctrl->set_joint_generalized_value(Pacer::Controller::load_goal, u);
 
-    Ravelin::VectorNd u = ctrl->get_joint_generalized_value(Pacer::Controller::load_goal);
-    OUTLOG(pid.u, "eef_pid_U", logDEBUG);
-    u += pid.u.segment(0, u.rows());
-    ctrl->set_joint_generalized_value(Pacer::Controller::load_goal, u);
-  }
 
 }
 

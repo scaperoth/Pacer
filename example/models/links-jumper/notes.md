@@ -70,3 +70,12 @@ TODO: Simplify problem by "deactivating" liftoff and landing phases. Trying to c
 TODO: add xd and xdd to goal.x and goal.xdd if there are contacts
 TODO: when not in jumping phase, set goal.x to init.x and xd,xdd to zero
 TOD: remove phases for now...
+
+### Update
+because i turned off the trajectory planner, I am using the jumper.cpp file to set the goal.x, goal.xd, and goal.xdd for the eef pid controller to use. But since there needs to be number of contacts for the code to calculate the Jacobian of the base, we have set the code to check the number of contacts to make sure there are 4 active contacts. 
+
+was not correctly using the Jacobian base with the velocity of the foot. I was using a more generalized movement from base -> foot -> joints. I did not fully understand the code base that was being used to calculate Jb. 
+code needs to be something more like: 
+Vft will equal [(N_1...N_nc), (S_1...S_nc), (T_1...T_nc)] s.t.
+== > Xd_1 = (N_1, S_1, T_1) 
+== > Xd = (Vft[i], Vft[i+NC], Vft[i + NC*2])

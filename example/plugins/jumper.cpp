@@ -135,17 +135,34 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
   OUTLOG(real_xd, "jumper_real_xd", logERROR);
   OUTLOG(real_xdd, "jumper_real_xdd", logERROR);
 
-  
+
 
   ///////////////////////////////////////////////
   ///
   /// IF NOT CONTACTS
   ///
   ///////////////////////////////////////////////
+  std::vector<Vector3d>
+    foot_vel(NUM_FEET),
+             foot_pos(NUM_FEET),
+             foot_acc(NUM_FEET),
+             foot_init(NUM_FEET),
+             foot_init_xd(NUM_FEET);
   if (NC != 4 ) {
-
+  
+    //TODO
     // set goal to init positions and return
+    //
+    for (int i = 0; i < NUM_FEET; i++) {
+      //get initail position
+      foot_init[i] = ctrl->get_data<Vector3d>(foot_names[i] + ".init.x");
+      //get initial velocity
+      foot_init_xd[i] = ctrl->get_data<Vector3d>(foot_names[i] + ".init.xd");
 
+      ctrl->set_data<Ravelin::Vector3d>(foot_names[i] + ".goal.x", foot_init[i]);
+      ctrl->set_data<Ravelin::Vector3d>(foot_names[i] + ".goal.xd", foot_init_xd[i]);
+    }
+    return;
   }
   /*
    * removing phases for now...
@@ -156,21 +173,22 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
     ctrl->set_data<double>(plugin_namespace + "phase", LANDED);
   */
 
-
   /// Jacobians
   Ravelin::MatrixNd N, S, T, D;
 
+
   ctrl->calc_contact_jacobians(generalized_q, contacts, N, S, T);
 
-  D.set_zero(NDOFS, NC * 4);
+  D.set_zero(NDOFS, NC * 2);
   D.set_sub_mat(0, 0, S);
   D.set_sub_mat(0, NC, T);
-  S.negate();
-  T.negate();
-  D.set_sub_mat(0, NC * 2, S);
-  D.set_sub_mat(0, NC * 3, T);
+  //S.negate();
+  //T.negate();
+  //D.set_sub_mat(0, NC * 2, S);
+  //D.set_sub_mat(0, NC * 3, T);
 
   int nk = D.columns() / NC;
+
   int nvars = NC + NC * (nk);
   // setup R
   Ravelin::MatrixNd R(NDOFS, NC + (NC * nk) );
@@ -178,28 +196,28 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
   R.block(0, NDOFS, NC, NC * nk + NC) = D;
 
   Ravelin::SharedConstMatrixNd Jb = R.block(NUM_JOINT_DOFS, NDOFS, 0, NC * 3);
-  Ravelin::SharedConstMatrixNd Jq = R.block(0, NUM_JOINT_DOFS, 0, NC * 3);
-
-
+  //Ravelin::SharedConstMatrixNd Jq = R.block(0, NUM_JOINT_DOFS, 0, NC * 3);
 
   ////////////////////////////////////////////////////////////
   //
   //  Code for jumper eef PID controller
   //
   ///////////////////////////////////////////////////////////
-  std::vector<Vector3d>
-  foot_vel(NUM_FEET),
-           foot_pos(NUM_FEET),
-           foot_acc(NUM_FEET),
-           foot_init(NUM_FEET),
-           foot_init_xd(NUM_FEET);
-  std::vector<std::string> eef_names = ctrl_ptr->get_data<std::vector<std::string> >("jumper_eef-PID-controller.id");
 
 
   /*
    * @deprecated
    * end-effector now controlled by spline output
    *
+
+   std::vector<Vector3d>
+  foot_vel(NUM_FEET),
+           foot_pos(NUM_FEET),
+           foot_acc(NUM_FEET),
+           foot_init(NUM_FEET),
+           foot_init_xd(NUM_FEET);
+
+  std::vector<std::string> eef_names = ctrl_ptr->get_data<std::vector<std::string> >("jumper_eef-PID-controller.id");
   if (PHASE == STARTED) {
     for (int i = 0; i < NUM_FEET; i++) {
       //get initail position
@@ -227,7 +245,7 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
   */
 
   /*
-   * TODO: Move into it's own "black box" function 
+   * TODO: Move into it's own "black box" function
    * and eval_cubic_spline separately
    */
   ///////////////////////////////////////////////
@@ -235,7 +253,7 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
   ///   SPLINE CODE
   ///
   ///////////////////////////////////////////////
-  
+
   //the values to be manipulated by the spline
   Vector3d x,
            xd,
@@ -329,128 +347,154 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
   /**
    * @deprecated
    * not using phases for now...
-   
+
   if (PHASE < LANDED) {
     */
-    Ravelin::VectorNd xb_des(6);
-    //set your desired velocity vector
-    xb_des[0] = x[0];
-    xb_des[1] = x[1];
-    xb_des[2] = x[2];
-    xb_des[3] = 0.0;
-    xb_des[4] = 0.0;
-    xb_des[5] = 0.0;
+  Ravelin::VectorNd xb_des(6);
+  //set your desired velocity vector
+  xb_des[0] = x[0];
+  xb_des[1] = x[1];
+  xb_des[2] = x[2];
+  xb_des[3] = 0.0;
+  xb_des[4] = 0.0;
+  xb_des[5] = 0.0;
 
-    Ravelin::VectorNd xdb_des(6);
-    //set your desired velocity vector
-    xdb_des[0] = xd[0];
-    xdb_des[1] = xd[1];
-    xdb_des[2] = xd[2];
-    xdb_des[3] = 0.0;
-    xdb_des[4] = 0.0;
-    xdb_des[5] = 0.0;
+  Ravelin::VectorNd xdb_des(6);
+  //set your desired velocity vector
+  xdb_des[0] = xd[0];
+  xdb_des[1] = xd[1];
+  xdb_des[2] = xd[2];
+  xdb_des[3] = 0.0;
+  xdb_des[4] = 0.0;
+  xdb_des[5] = 0.0;
 
-    Ravelin::VectorNd xddb_des(6);
-    //set your desired velocity vector
-    xddb_des[0] = xdd[0];
-    xddb_des[1] = xdd[1];
-    xddb_des[2] = xdd[2];
-    xddb_des[3] = 0.0;
-    xddb_des[4] = 0.0;
-    xddb_des[5] = 0.0;
+  Ravelin::VectorNd xddb_des(6);
+  //set your desired velocity vector
+  xddb_des[0] = xdd[0];
+  xddb_des[1] = xdd[1];
+  xddb_des[2] = xdd[2];
+  xddb_des[3] = 0.0;
+  xddb_des[4] = 0.0;
+  xddb_des[5] = 0.0;
 
-    static std::vector<double>
-    Kp = ctrl->get_data<std::vector<double> >(plugin_namespace + "base_gains.kp"),
-    Kv = ctrl->get_data<std::vector<double> >(plugin_namespace + "base_gains.kv"),
-    Ki = ctrl->get_data<std::vector<double> >(plugin_namespace + "base_gains.ki");
+  static std::vector<double>
+  Kp = ctrl->get_data<std::vector<double> >(plugin_namespace + "jumping_gains.kp"),
+  Kv = ctrl->get_data<std::vector<double> >(plugin_namespace + "jumping_gains.kv"),
+  Ki = ctrl->get_data<std::vector<double> >(plugin_namespace + "jumping_gains.ki");
 
-    /*
-     * @deprecated
-     * doing error correction in end-effector space
-    Ravelin::VectorNd vel_base_dot(6);
-    for (int j = 0; j < xdb_des.size(); j++) {
-      //exit_velocity[j] = vel_base[j];
-      //exit_velocity_dot[j] = (Vb_des[j] - vel_base[j]) * Kv[j];
-      vel_base_dot[j] = (xdb_des[j] - vel_base[j]) * Kv[j];
-    }
+  ctrl->set_data<std::vector<double> >("jumper_eef-PID-controller.gains.kp", Kp);
+  ctrl->set_data<std::vector<double> >("jumper_eef-PID-controller.gains.kv", Kv);
+  ctrl->set_data<std::vector<double> >("jumper_eef-PID-controller.gains.ki", Ki);
+  /*
+   * @deprecated
+   * doing error correction in end-effector space
+  Ravelin::VectorNd vel_base_dot(6);
+  for (int j = 0; j < xdb_des.size(); j++) {
+    //exit_velocity[j] = vel_base[j];
+    //exit_velocity_dot[j] = (Vb_des[j] - vel_base[j]) * Kv[j];
+    vel_base_dot[j] = (xdb_des[j] - vel_base[j]) * Kv[j];
+  }
 
-    OUTLOG(xdb_des, "jumper_vb_des: ", logERROR);
-    OUTLOG(vel_base_dot, "vel_base_dot", logERROR);
-    OUTLOG(Jb, "Jb", logERROR);
+  OUTLOG(xdb_des, "jumper_vb_des: ", logERROR);
+  OUTLOG(vel_base_dot, "vel_base_dot", logERROR);
+  OUTLOG(Jb, "Jb", logERROR);
 
-    //multiply Jb * desired base velocity to get desired foot velocity
-    Ravelin::VectorNd Vft;
-    Jb.transpose_mult(vel_base_dot  , Vft);
+  //multiply Jb * desired base velocity to get desired foot velocity
+  Ravelin::VectorNd Vft;
+  Jb.transpose_mult(vel_base_dot  , Vft);
 
-    */
+  */
 
-    Ravelin::VectorNd Vft, Aft;
-    Jb.transpose_mult(xdb_des  , Vft);
-    Jb.transpose_mult(xddb_des  , Aft);
+  Ravelin::VectorNd Vft, Aft;
+  Jb.transpose_mult(xdb_des  , Vft);
+  Jb.transpose_mult(xddb_des  , Aft);
 
-    OUTLOG(Vft, "Vft", logERROR);
+  Vft *= -alpha;
 
-    //TODO:
-    //set Vft -> foot[i].goal.xd
+  OUTLOG(Vft, "Vft", logERROR);
+
+  //TODO:
+  double dt = .001;
+  //set Vft -> foot[i].goal.xd
+  for (int i = 0; i < NUM_FEET; i++) {
+
+    //store the current goal.x
+    Ravelin::Vector3d foot_goal_x = ctrl->get_data<Ravelin::Vector3d>(foot_names[i] + ".goal.x");
+    OUTLOG(foot_goal_x, "jumper_" + foot_names[i] + ".x", logERROR);
+
+    Ravelin::Vector3d foot_goal_xd(Vft[i], Vft[i + NUM_FEET], Vft[i + NUM_FEET * 2], foot_goal_x.pose);
+
+    //update goal.xd
+    ctrl->set_data<Ravelin::Vector3d>(foot_names[i] + ".goal.xd", foot_goal_xd);
+    OUTLOG(foot_goal_xd, "jumper_" + foot_names[i] + ".xd", logERROR);
 
     //set foot[i].goal.x += foot[i].goal.xd * dt
+    //multiply goal xd by dt
+    foot_goal_xd *= dt;
+    //x + xd*t
+    foot_goal_x += foot_goal_xd;
+    //set new goal.x
+    ctrl->set_data<Ravelin::Vector3d>(foot_names[i] + ".goal.x", foot_goal_x );
 
+    Ravelin::Vector3d foot_goal_xdd(Aft[i], Aft[i + NUM_FEET], Aft[i + NUM_FEET * 2], foot_goal_x.pose);
     //set foot[i].goal.xdd = Aft
+    ctrl->set_data<Ravelin::Vector3d>(foot_names[i] + ".goal.xdd", foot_goal_xdd);
+  }
 
-    /**
-     * @depracated
-     * using end-effector as controller
-     * not using joint control here
-     
-    //multiply desired foot velocity by alpha to get desired foot force
-    Ravelin::VectorNd Fft = Vft;
-    Fft *= -alpha;
+  /**
+   * @deprecated
+   * using end-effector as controller
+   * not using joint control here
 
-
-    OUTLOG(Fft, "Fft", logERROR);
-
-    OUTLOG(Jq, "Jq", logERROR);
-
-    //Jq transpose * desired foot force to get desired torque
-    Ravelin::VectorNd tau;
-    Jq.mult(Fft, tau);
+  //multiply desired foot velocity by alpha to get desired foot force
+  Ravelin::VectorNd Fft = Vft;
+  Fft *= -alpha;
 
 
-    OUTLOG(Fft, "Fft", logERROR);
+  OUTLOG(Fft, "Fft", logERROR);
 
-    /// Feedback gains
-    OUTLOG(tau, "viip_fb", logERROR);
+  OUTLOG(Jq, "Jq", logERROR);
 
-    Ravelin::VectorNd u = ctrl->get_joint_generalized_value(Pacer::Controller::load_goal);
-    u += tau;
+  //Jq transpose * desired foot force to get desired torque
+  Ravelin::VectorNd tau;
+  Jq.mult(Fft, tau);
 
-    ctrl->set_joint_generalized_value(Pacer::Controller::load_goal, u);
-    
+
+  OUTLOG(Fft, "Fft", logERROR);
+
+  /// Feedback gains
+  OUTLOG(tau, "viip_fb", logERROR);
+
+  Ravelin::VectorNd u = ctrl->get_joint_generalized_value(Pacer::Controller::load_goal);
+  u += tau;
+
+  ctrl->set_joint_generalized_value(Pacer::Controller::load_goal, u);
+
   } else {
-    ctrl->set_data<double>(plugin_namespace + "phase", LANDED);
+  ctrl->set_data<double>(plugin_namespace + "phase", LANDED);
 
   }
 
-} else if (PHASE == STARTED || PHASE == LANDED) {
+  } else if (PHASE == STARTED || PHASE == LANDED) {
   OUTLOG(PHASE, "LIFTOFF HERE", logERROR);
 
   if (PHASE == STARTED) {
-    //OUTLOG(exit_velocity, "exit_velocity", logERROR);
-    //OUTLOG(exit_velocity_dot, "exit_velocity_dot", logERROR);
+  //OUTLOG(exit_velocity, "exit_velocity", logERROR);
+  //OUTLOG(exit_velocity_dot, "exit_velocity_dot", logERROR);
   }
 
   ctrl->set_data<double>(plugin_namespace + "phase", LIFTOFF);
 
 
-} else if (PHASE == LIFTOFF) {
+  } else if (PHASE == LIFTOFF) {
 
-}
+  }
   */
 
-if (time_constraint && t >= total_spline_time) {
-  exit(1);
-}
-OUTLOG(t, "jumper_time", logERROR);
+  if (time_constraint && t >= total_spline_time) {
+    exit(1);
+  }
+  OUTLOG(t, "jumper_time", logERROR);
 
 }
 

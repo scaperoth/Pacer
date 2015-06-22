@@ -39,10 +39,10 @@
     </id>
     <active type="bool">
                       false                       false                          false
-                      false                       false                          true                       
+                      false                       false                          false                       
                       true                        false                          false
                       false                       false                          false
-                      true                        true
+                      false                       true
     </active>
     <file type="string">
                       libgamepad.so               libwaypoints.so               libgait-planner.so    
@@ -321,6 +321,11 @@
     <priority type="double">2</priority>
     <phase type="double">0</phase>
     <min-allowed-friction type="double">10</min-allowed-friction>
+    <jumping_gains>
+      <kp type="double">1e3 1e3 1e3   1e3 1e3 1e3   1e3 1e3 1e3   1e3 1e3 1e3</kp>
+      <kv type="double">3e1 3e1 3e1     3e1 3e1 3e1     3e1 3e1 3e1     3e1 3e1 3e1    </kv>
+      <ki type="double">1e-3 1e-3 1e-3  1e-3 1e-3 1e-3  1e-3 1e-3 1e-3  1e-3 1e-3 1e-3</ki>
+    </jumping_gains>
     <!-- Gains are for the q of joint ids respectively -->
     <liftoff_gains>
       <kp type="double">1e3 1e3 1e3   1e3 1e3 1e3   1e3 1e3 1e3   1e3 1e3 1e3</kp>
@@ -341,8 +346,8 @@
     <range type="double">1</range>
     <alpha type="double">1</alpha>
     <development type="bool">true</development>
-    <time_constraint type="bool">false</time_constraint>
-    <total_spline_time type="double">.5</total_spline_time>
+    <time_constraint type="bool">true</time_constraint>
+    <total_spline_time type="double">.3</total_spline_time>
     <start_spline type="double">0 0 .172</start_spline>
     <end_spline type="double">.4  0 .2</end_spline>
   </jumper>
@@ -364,7 +369,7 @@
   </jumper_joint-PID-controller>
 
   <jumper_eef-PID-controller>
-    <priority type="double">4</priority>
+    <priority type="double">3</priority>
     <real-time-factor type="double">1</real-time-factor>
     <id type="string">LF_FOOT           RF_FOOT             LH_FOOT             RH_FOOT</id>
     <!-- Gains are for the q of joint ids respectively -->
