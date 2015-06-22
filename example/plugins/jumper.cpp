@@ -135,6 +135,14 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
   OUTLOG(real_xd, "jumper_real_xd", logERROR);
   OUTLOG(real_xdd, "jumper_real_xdd", logERROR);
 
+  static std::vector<double>
+  Kp = ctrl->get_data<std::vector<double> >(plugin_namespace + "jumping_gains.kp"),
+  Kv = ctrl->get_data<std::vector<double> >(plugin_namespace + "jumping_gains.kv"),
+  Ki = ctrl->get_data<std::vector<double> >(plugin_namespace + "jumping_gains.ki");
+
+  ctrl->set_data<std::vector<double> >("jumper_eef-PID-controller.gains.kp", Kp);
+  ctrl->set_data<std::vector<double> >("jumper_eef-PID-controller.gains.kv", Kv);
+  ctrl->set_data<std::vector<double> >("jumper_eef-PID-controller.gains.ki", Ki);
 
 
   ///////////////////////////////////////////////
@@ -143,13 +151,13 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
   ///
   ///////////////////////////////////////////////
   std::vector<Vector3d>
-    foot_vel(NUM_FEET),
-             foot_pos(NUM_FEET),
-             foot_acc(NUM_FEET),
-             foot_init(NUM_FEET),
-             foot_init_xd(NUM_FEET);
+  foot_vel(NUM_FEET),
+           foot_pos(NUM_FEET),
+           foot_acc(NUM_FEET),
+           foot_init(NUM_FEET),
+           foot_init_xd(NUM_FEET);
   if (NC != 4 ) {
-  
+
     //TODO
     // set goal to init positions and return
     //
@@ -377,14 +385,7 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
   xddb_des[4] = 0.0;
   xddb_des[5] = 0.0;
 
-  static std::vector<double>
-  Kp = ctrl->get_data<std::vector<double> >(plugin_namespace + "jumping_gains.kp"),
-  Kv = ctrl->get_data<std::vector<double> >(plugin_namespace + "jumping_gains.kv"),
-  Ki = ctrl->get_data<std::vector<double> >(plugin_namespace + "jumping_gains.ki");
 
-  ctrl->set_data<std::vector<double> >("jumper_eef-PID-controller.gains.kp", Kp);
-  ctrl->set_data<std::vector<double> >("jumper_eef-PID-controller.gains.kv", Kv);
-  ctrl->set_data<std::vector<double> >("jumper_eef-PID-controller.gains.ki", Ki);
   /*
    * @deprecated
    * doing error correction in end-effector space
