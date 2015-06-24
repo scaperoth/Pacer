@@ -324,7 +324,7 @@
     <jumping_gains>
       <kp type="double">1e3 1e3 1e3   1e3 1e3 1e3   1e3 1e3 1e3   1e3 1e3 1e3</kp>
       <kv type="double">3e1 3e1 3e1     3e1 3e1 3e1     3e1 3e1 3e1     3e1 3e1 3e1    </kv>
-      <ki type="double">1e-3 1e-3 1e-3  1e-3 1e-3 1e-3  1e-3 1e-3 1e-3  1e-3 1e-3 1e-3</ki>
+      <ki type="double">0 0 0     0 0 0     0 0 0     0 0 0</ki>
     </jumping_gains>
     <!-- Gains are for the q of joint ids respectively -->
     <liftoff_gains>
@@ -347,7 +347,8 @@
     <alpha type="double">1</alpha>
     <development type="bool">true</development>
     <time_constraint type="bool">true</time_constraint>
-    <total_spline_time type="double">.3</total_spline_time>
+    <dt type="double">0.001</dt>
+    <total_spline_time type="double">.5</total_spline_time>
     <start_spline type="double">0 0 .172</start_spline>
     <end_spline type="double">.4  0 .2</end_spline>
   </jumper>

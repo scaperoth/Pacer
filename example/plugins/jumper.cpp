@@ -33,6 +33,13 @@ void run_test(std::vector<Ravelin::VectorNd> coefs, VectorNd T_i, Vector3d real_
 
 }
 
+void check_time_constraint(bool time_constraint, double t, double total_spline_time){
+  if (time_constraint && t >= total_spline_time) {
+    exit(1);
+  }
+  OUTLOG(t, "jumper_time", logERROR);
+}
+
 void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
   ctrl_ptr = ctrl;
 
@@ -51,6 +58,8 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
   bool time_constraint = ctrl->get_data<bool>(plugin_namespace + "time_constraint");
 
   double total_spline_time = ctrl->get_data<double>(plugin_namespace + "total_spline_time");
+
+  double dt = ctrl->get_data<double>(plugin_namespace + "dt");;
 
   std::vector<double>
   start_spline = ctrl->get_data<std::vector<double> >(plugin_namespace + "start_spline"),
@@ -158,6 +167,7 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
            foot_init_xd(NUM_FEET);
   if (NC != 4 ) {
 
+    check_time_constraint(time_constraint, t, total_spline_time);
     //TODO
     // set goal to init positions and return
     //
@@ -410,12 +420,11 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
   Jb.transpose_mult(xdb_des  , Vft);
   Jb.transpose_mult(xddb_des  , Aft);
 
-  Vft *= -alpha;
+  Vft *= alpha;
 
   OUTLOG(Vft, "Vft", logERROR);
 
   //TODO:
-  double dt = .001;
   //set Vft -> foot[i].goal.xd
   for (int i = 0; i < NUM_FEET; i++) {
 
@@ -492,10 +501,7 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
   }
   */
 
-  if (time_constraint && t >= total_spline_time) {
-    exit(1);
-  }
-  OUTLOG(t, "jumper_time", logERROR);
+  check_time_constraint(time_constraint, t, total_spline_time);
 
 }
 

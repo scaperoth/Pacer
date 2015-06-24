@@ -91,3 +91,9 @@ Kp =   1e3 1e3 1e3     1e3 1e3 1e3     1e3 1e3 1e3     1e3 1e3 1e3
 Kv =   3e1 3e1 3e1     3e1 3e1 3e1     3e1 3e1 3e1     3e1 3e1 3e1   
 Ki = 1e-3 1e-3 1e-3   1e-3 1e-3 1e-3  1e-3 1e-3 1e-3  1e-3 1e-3 1e-3
 ```
+
+### Update
+
+I have tried a number of different values for the gains. Nothing seems to work. Increasing the gains in the z direction for all of the legs seems to make the movment more stiff when comparing the plots between calculated and desired. There is still a sort of wobbling motion while trying to "squat". Maybe the control system is not functioning in the way that I imagine it was designed. 
+
+I need to go back and ensure that the code I have is in fact doing what I think it is doing. I will double check the Jacobian calculations and the Vft calculation that is being made using the NST model for natural and tangential frictions. 
