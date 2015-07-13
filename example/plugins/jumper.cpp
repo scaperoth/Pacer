@@ -16,30 +16,39 @@ using namespace Ravelin;
 boost::shared_ptr<Pacer::Controller> ctrl_ptr;
 boost::shared_ptr<Pose3d> base_link_frame;
 
-
-void run_test(std::vector<Ravelin::VectorNd> coefs, VectorNd T_i, Vector3d real_x, Vector3d real_xd, Vector3d real_xdd, Vector3d xd_final, int n) {
+void run_test(std::vector<Ravelin::VectorNd> coefs, VectorNd T_i, Vector3d x, Vector3d xd, Vector3d xdd, Vector3d xd_final, int n) {
 
   for (double t_step = T_i[0]; t_step <= T_i[n - 1]; t_step += .001) {
     for (int dim = 0; dim < 3; dim++) {
-      Utility::eval_cubic_spline(coefs[dim], T_i, t_step, real_x[dim], real_xd[dim], real_xdd[dim]);
+      Utility::eval_cubic_spline(coefs[dim], T_i, t_step, x[dim], xd[dim], xdd[dim]);
     }
 
     OUTLOG(xd_final, "jumper_xd_final", logERROR);
-    OUTLOG(real_x, "jumper_x", logERROR);
-    OUTLOG(real_xd, "jumper_xd", logERROR);
-    OUTLOG(real_xdd, "jumper_xdd", logERROR);
+    OUTLOG(x, "jumper_x", logERROR);
+    OUTLOG(xd, "jumper_xd", logERROR);
+    OUTLOG(xdd, "jumper_xdd", logERROR);
 
   }
 
 }
 
-void check_time_constraint(bool time_constraint, double t, double total_spline_time){
+void check_time_constraint(bool time_constraint, double t, double total_spline_time) {
   if (time_constraint && t >= total_spline_time) {
     exit(1);
   }
   OUTLOG(t, "jumper_time", logERROR);
 }
 
+bool check_vec_for_nan(VectorNd& vec, std::string vector_name){
+  for(int i = 0; i < vec.size(); i++){
+    if(isnan(vec[i])){
+      OUTLOG(vec, "jumper_nan_vector_"+ vector_name, logERROR);
+      return true;
+    }
+  }
+
+  return false;
+}
 void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
   ctrl_ptr = ctrl;
 
@@ -97,6 +106,20 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
         contacts.push_back(c[0]);
   }
 
+  //TODO
+  //non constant contact shared_ptr
+  std::vector< boost::shared_ptr< Pacer::Robot::contact_t> > non_constant_c;
+
+  for (int i = 0; i < contacts.size(); i++) {
+
+    //cast to non-constant
+    //Pacer::Robot::contact_t& c = contacts[i];
+
+    //change c.normal to 001 (z)
+
+    //push into non-constant contacts var & "boost-cast" c
+    //non_constant_c.push_back(c);
+  }
 
   int NC = contacts.size();
 
@@ -165,10 +188,11 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
            foot_acc(NUM_FEET),
            foot_init(NUM_FEET),
            foot_init_xd(NUM_FEET);
-  if (NC != 4 ) {
+
+  if (NC != 4 && PHASE != JUMPING) {
 
     check_time_constraint(time_constraint, t, total_spline_time);
-    //TODO
+    //
     // set goal to init positions and return
     //
     for (int i = 0; i < NUM_FEET; i++) {
@@ -182,6 +206,14 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
     }
     return;
   }
+
+  //TODO 7-13:
+  //when jumping phase reaches end of spline, switch to liftoff phase
+  //set desired position to current position so that the legs go limp in the air
+
+  //if the code makes it past the initial reset value above
+  ctrl->set_data<double>(plugin_namespace + "phase", JUMPING);
+  
   /*
    * removing phases for now...
   if (PHASE ==  LOADED)
@@ -192,8 +224,36 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
   */
 
   /// Jacobians
-  Ravelin::MatrixNd N, S, T, D;
 
+  /**
+   * added 6/25
+   * calcuating jocobian here instead of using cacl_contact_jacobians
+   */
+  // Calc jacobian for AB at this EEF
+  Ravelin::VectorNd local_q = generalized_q;
+
+  OUTLOG(local_q, "jumper_local_q", logERROR);
+  local_q.set_sub_vec(NUM_JOINT_DOFS, Utility::pose_to_vec(Ravelin::Pose3d()));
+
+  OUTLOG(local_q, "jumper_local_q_set_sub", logERROR);
+
+  std::map<std::string, MatrixNd> J_contacts;
+
+  for (int i = 0; i < NUM_FEET; i++) {
+    //for loop create vector of jacobians for each of the contacts
+    //contact[i] -> id are the foot names
+    J_contacts[foot_names[i]] = ctrl->calc_link_jacobian(local_q, foot_names[i]);
+
+    //TODO:
+    //
+  }
+  //end for loop
+
+  /**
+   * @deprecated 6/25
+   *
+
+  Ravelin::MatrixNd N, S, T, D;
 
   ctrl->calc_contact_jacobians(generalized_q, contacts, N, S, T);
 
@@ -215,6 +275,7 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
 
   Ravelin::SharedConstMatrixNd Jb = R.block(NUM_JOINT_DOFS, NDOFS, 0, NC * 3);
   //Ravelin::SharedConstMatrixNd Jq = R.block(0, NUM_JOINT_DOFS, 0, NC * 3);
+  */
 
   ////////////////////////////////////////////////////////////
   //
@@ -288,7 +349,7 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
   double up_vel_des = v_desired * std::sin(theta_radians);
   OUTLOG(up_vel_des, "jumper_up_vel_des", logERROR);
 
-  static Vector3d init_pos = x;
+  //static Vector3d init_pos = x;
   Vector3d xd_final(fwd_vel_des, 0.0, up_vel_des);
   //each
 
@@ -315,7 +376,7 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
   //  run source parse_data.sh after activating development
   //
   ///////////////////////////////////////////////////////////
-  static std::vector<VectorNd> coefs(4);
+  std::vector<VectorNd> coefs(4);
 
   for (int d = 0; d < 3; d++) {
 
@@ -417,38 +478,57 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
   */
 
   Ravelin::VectorNd Vft, Aft;
-  Jb.transpose_mult(xdb_des  , Vft);
-  Jb.transpose_mult(xddb_des  , Aft);
+  //Jb.transpose_mult(xdb_des  , Vft);
+  //Jb.transpose_mult(xddb_des  , Aft);
 
-  Vft *= alpha;
+  //Vft *= alpha;
 
-  OUTLOG(Vft, "Vft", logERROR);
-
-  //TODO:
+  //
   //set Vft -> foot[i].goal.xd
   for (int i = 0; i < NUM_FEET; i++) {
+    
+    OUTLOG(J_contacts[foot_names[i]], "jumper_J_contacts", logERROR);
+
+    SharedConstMatrixNd Jb_block = J_contacts[foot_names[i]].block(0, 3, NUM_JOINT_DOFS, J_contacts[foot_names[i]].columns()); 
+    OUTLOG(Jb_block, "jumper_J_contacts_BLOCK", logERROR);
+    
+    //JBase multiplied by desired values to get Vel ft and Accel ft
+    Jb_block.mult(xdb_des, Vft);
+    Jb_block.mult(xddb_des, Aft);
+
+    assert(!check_vec_for_nan(Vft, "Vft") && !check_vec_for_nan(Aft, "Aft"));
+
+    //multiply by alpha to manipulate direction of force
+    Vft *= alpha;
+
+    OUTLOG(Vft, "jumper_Vft", logERROR);
+    OUTLOG(Aft, "jumper_Aft", logERROR);
 
     //store the current goal.x
-    Ravelin::Vector3d foot_goal_x = ctrl->get_data<Ravelin::Vector3d>(foot_names[i] + ".goal.x");
-    OUTLOG(foot_goal_x, "jumper_" + foot_names[i] + ".x", logERROR);
+    Ravelin::Vector3d curr_foot_goal_x = ctrl->get_data<Ravelin::Vector3d>(foot_names[i] + ".goal.x");
+    OUTLOG(curr_foot_goal_x, "jumper_" + foot_names[i] + ".x", logERROR);
 
-    Ravelin::Vector3d foot_goal_xd(Vft[i], Vft[i + NUM_FEET], Vft[i + NUM_FEET * 2], foot_goal_x.pose);
+    //create new goal xd as N[i], S[i+number of feet], T[i + number of feet * 2] calculated from Jb
+    Ravelin::Vector3d new_foot_goal_xd(Vft[0], Vft[1], Vft[2], curr_foot_goal_x.pose);
 
-    //update goal.xd
-    ctrl->set_data<Ravelin::Vector3d>(foot_names[i] + ".goal.xd", foot_goal_xd);
-    OUTLOG(foot_goal_xd, "jumper_" + foot_names[i] + ".xd", logERROR);
+    //set new goal.xd
+    ctrl->set_data<Ravelin::Vector3d>(foot_names[i] + ".goal.xd", new_foot_goal_xd);
+    OUTLOG(new_foot_goal_xd, "jumper_" + foot_names[i] + ".new_xd", logERROR);
 
-    //set foot[i].goal.x += foot[i].goal.xd * dt
+    //set foot[i].goal.x += foot[i].goal.xd * dt using current xd value
     //multiply goal xd by dt
-    foot_goal_xd *= dt;
+    new_foot_goal_xd *= dt;
     //x + xd*t
-    foot_goal_x += foot_goal_xd;
-    //set new goal.x
-    ctrl->set_data<Ravelin::Vector3d>(foot_names[i] + ".goal.x", foot_goal_x );
+    curr_foot_goal_x += new_foot_goal_xd;
 
-    Ravelin::Vector3d foot_goal_xdd(Aft[i], Aft[i + NUM_FEET], Aft[i + NUM_FEET * 2], foot_goal_x.pose);
-    //set foot[i].goal.xdd = Aft
-    ctrl->set_data<Ravelin::Vector3d>(foot_names[i] + ".goal.xdd", foot_goal_xdd);
+    //set new goal.x
+    ctrl->set_data<Ravelin::Vector3d>(foot_names[i] + ".goal.x", curr_foot_goal_x );
+
+    //foot[i].goal.xdd = Aft
+    //create new goal.xdd
+    Ravelin::Vector3d new_foot_goal_xdd(Aft[0], Aft[1], Aft[2], curr_foot_goal_x.pose);
+    //set new goal.xdd
+    ctrl->set_data<Ravelin::Vector3d>(foot_names[i] + ".goal.new_xdd", new_foot_goal_xdd);
   }
 
   /**

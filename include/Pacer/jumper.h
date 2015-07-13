@@ -1,4 +1,4 @@
-static unsigned LOADED = 0;
-static unsigned STARTED = 1;
+static unsigned INIT = 0;
+static unsigned JUMPING = 1;
 static unsigned LIFTOFF = 2;
-static unsigned LANDED = 3;
+static unsigned LANDING = 3;

@@ -50,7 +50,7 @@ public:
     Kv_tmp = ctrl_ptr->get_data<std::vector<double> >(plugin_namespace + "liftoff_gains.kv"),
     Ki_tmp = ctrl_ptr->get_data<std::vector<double> >(plugin_namespace + "liftoff_gains.ki");
 
-    if (phase == LANDED) {
+    if (phase == LANDING) {
       OUTLOG(phase, "PHASE ONE", logERROR);
       Kp_tmp = ctrl_ptr->get_data<std::vector<double> >(plugin_namespace + "landing_gains.kp");
       Kv_tmp = ctrl_ptr->get_data<std::vector<double> >(plugin_namespace + "landing_gains.kv");
@@ -140,13 +140,13 @@ void Update(const boost::shared_ptr<Pacer::Controller>& ctrl, double t) {
   ctrl_ptr = ctrl;
   // --------------------------- JOINT FEEDBACK ------------------------------
   static JointPID pid_liftoff(LIFTOFF);
-  static JointPID pid_land(LANDED);
+  static JointPID pid_land(LANDING);
 
   int PHASE = (int)ctrl->get_data<double>("jumper.phase");
 
   if (PHASE == LIFTOFF) {
     activate_joint_pid(ctrl, pid_liftoff);
-  } else if (PHASE == LANDED) {
+  } else if (PHASE == LANDING) {
     activate_joint_pid(ctrl, pid_land);
   }
 }

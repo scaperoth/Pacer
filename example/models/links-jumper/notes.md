@@ -94,6 +94,36 @@ Ki = 1e-3 1e-3 1e-3   1e-3 1e-3 1e-3  1e-3 1e-3 1e-3  1e-3 1e-3 1e-3
 
 ### Update
 
-I have tried a number of different values for the gains. Nothing seems to work. Increasing the gains in the z direction for all of the legs seems to make the movment more stiff when comparing the plots between calculated and desired. There is still a sort of wobbling motion while trying to "squat". Maybe the control system is not functioning in the way that I imagine it was designed. 
+I have tried a number of different values for the gains. sNothing seems to work. Increasing the gains in the z direction for all of the legs seems to make the movment more stiff when comparing the plots between calculated and desired. There is still a sort of wobbling motion while trying to "squat". Maybe the control system is not functioning in the way that I imagine it was designed. 
 
 I need to go back and ensure that the code I have is in fact doing what I think it is doing. I will double check the Jacobian calculations and the Vft calculation that is being made using the NST model for natural and tangential frictions. 
+
+### Commit #: 
+
+Updated jumper.h file under include/Pacer with new global values of "INIT", "JUMPING", "LIFTOFF", "LANDING" for clarity vs. the old values of "LOADED", "STARTED", "LIFTOFF", "LANDED". This is because LOADED and STARTED are ambiguous. Instead of flagging whether or not a state has occurred, I'd like to identify the full current state. Which state has occurred can be trivially understood from the new names. 
+
+calculating Jacobian of the base in the code instead of relying on external code:
+
+```
+for (int i = 0; i < NUM_FEET; i++) 
+
+    SharedConstMatrixNd Jb_block = J_contacts[foot_names[i]].block(0, 3, NUM_JOINT_DOFS, J_contacts[foot_names[i]].columns());
+
+    //store the current goal.x
+    Ravelin::Vector3d curr_foot_goal_x = ctrl->get_data<Ravelin::Vector3d>(foot_names[i] + ".goal.x");
+
+    //create new goal xd as velocities of the foot calculated using the jacobian of the base
+    Ravelin::Vector3d new_foot_goal_xd(Vft[0], Vft[1], Vft[2], curr_foot_goal_x.pose);
+
+    //multiply goal xd by dt
+    new_foot_goal_xd *= dt;
+    //x + xd*t
+    curr_foot_goal_x += new_foot_goal_xd;
+...
+
+```
+apply these values to the desired goals for the eef controller to use. 
+
+TODO:     
+add code in jumper.cpp for when jumping phase reaches end of spline, switch to liftoff phase
+set desired position to current position so that the legs go limp in the air
